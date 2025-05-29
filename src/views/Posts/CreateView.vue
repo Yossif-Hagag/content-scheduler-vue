@@ -2,7 +2,7 @@
 import { usePostsStore } from "@/stores/posts";
 import { usePlatformsStore } from "@/stores/platforms";
 import { storeToRefs } from "pinia";
-import { reactive, ref, computed, onMounted } from "vue";
+import { reactive, ref, computed, onMounted ,toRaw} from "vue";
 
 const postsStore = usePostsStore();
 const platformsStore = usePlatformsStore();
@@ -30,7 +30,7 @@ const handleImage = (e) => {
 };
 
 const submit = async () => {
-  await postsStore.createPost(formData);
+  await postsStore.createPost(toRaw(formData));
 };
 </script>
 
@@ -44,8 +44,7 @@ const submit = async () => {
     >
       <span
         style="float: right; cursor: pointer"
-        @click="
-          message && (message.value = null);
+        @click="message && (message = null);
           errors.general && (errors.general = null);
         "
         >&times;</span
@@ -53,6 +52,7 @@ const submit = async () => {
       <span v-if="message">{{ message }}</span>
       <span v-if="errors.general">{{ errors.general[0] }}</span>
     </div>
+    
 
     <form @submit.prevent="submit" class="post-form">
       <div>
@@ -105,8 +105,8 @@ const submit = async () => {
         <label>Image (optional)</label>
         <input
           type="file"
-          @change="handleImage"
           accept="image/*"
+          @change="(e) => (formData.image_url = e.target.files[0])"
           class="input"
         />
         <p v-if="errors.image_url" class="error">{{ errors.image_url[0] }}</p>

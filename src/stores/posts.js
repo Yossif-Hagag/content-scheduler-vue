@@ -4,19 +4,21 @@ import { useAuthStore } from "./auth";
 export const usePostsStore = defineStore("postsStore", {
   state: () => ({
     errors: {},
+    message: null,
   }),
   actions: {
     /******************* Get all posts *******************/
     async getAllPosts(params = {}) {
-      // دعم الفلاتر: status, date
       const query = new URLSearchParams(params).toString();
       const res = await fetch(`/api/posts${query ? "?" + query : ""}`, {
+        method: "GET",
+        credentials: "include",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
+
       const data = await res.json();
-      // data.data هو مصفوفة المنشورات مع platforms
       return data.data || [];
     },
 
@@ -36,24 +38,22 @@ export const usePostsStore = defineStore("postsStore", {
       this.errors = {};
       let body, headers;
 
-      // استخدم FormData إذا كان هناك صورة أو منصات
-      const useFormData =
-        formData.image_url instanceof File ||
-        (Array.isArray(formData.platforms) && formData.platforms.length > 0);
+      const useFormData = formData.image_url instanceof File;
 
       if (useFormData) {
         body = new FormData();
-        for (const key in formData) {
-          if (Array.isArray(formData[key])) {
-            formData[key].forEach((val) => body.append(`${key}[]`, val));
-          } else {
-            // أضف الحقل حتى لو كان فارغاً (لأن Laravel يتوقع وجوده)
-            body.append(key, formData[key] ?? "");
-          }
+        body.append("title", formData.title ?? "");
+        body.append("content", formData.content ?? "");
+        body.append("scheduled_time", formData.scheduled_time ?? "");
+        body.append("status", formData.status ?? "draft");
+        if (Array.isArray(formData.platforms)) {
+          formData.platforms.forEach((val) => body.append("platforms[]", val));
+        }
+        if (formData.image_url instanceof File) {
+          body.append("image_url", formData.image_url);
         }
         headers = {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
-          // لا تضع Content-Type مع FormData
         };
       } else {
         body = JSON.stringify(formData);
@@ -72,19 +72,16 @@ export const usePostsStore = defineStore("postsStore", {
       const data = await res.json();
 
       if (res.status === 422) {
-        if (data.errors) {
-          this.errors = data.errors;
-        } else {
-          this.errors = { general: [data.message] };
-        }
+        this.errors = data.errors || { general: [data.message] };
+        this.message = null;
       } else if (res.ok) {
         this.errors = {};
+        this.message = data.message || "Post created successfully.";
         return data.data;
       } else {
         this.errors = { general: [data.message || "Failed to create post."] };
       }
     },
-
     /******************* Delete a post *******************/
     async deletePost(post) {
       const authStore = useAuthStore();

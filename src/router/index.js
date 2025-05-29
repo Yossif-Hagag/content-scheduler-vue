@@ -5,6 +5,7 @@ import DashboardView from "@/views/DashboardView.vue";
 import RegisterView from "../views/Auth/RegisterView.vue";
 import LoginView from "../views/Auth/LoginView.vue";
 import PostCreateView from "@/views/Posts/CreateView.vue";
+import PostUpdateView from "@/views/Posts/UpdateView.vue";
 import ShowView from "@/views/Posts/ShowView.vue";
 import UpdateView from "@/views/Posts/UpdateView.vue";
 import ProfileView from "@/views/Auth/ProfileView.vue";
@@ -46,6 +47,12 @@ const router = createRouter({
       path: "/posts/create",
       name: "post_create",
       component: PostCreateView,
+      meta: { auth: true },
+    },
+    {
+      path: "/posts/edit/:id",
+      name: "post_edit",
+      component: PostUpdateView,
       meta: { auth: true },
     },
     {
