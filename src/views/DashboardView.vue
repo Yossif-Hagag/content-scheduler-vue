@@ -1,22 +1,31 @@
 <script setup>
 import { ref, computed, onMounted, watch } from "vue";
+import { storeToRefs } from "pinia";
+import { Calendar } from "@fullcalendar/core";
+import dayGridPlugin from "@fullcalendar/daygrid";
 import { usePostsStore } from "@/stores/posts";
 import { usePlatformsStore } from "@/stores/platforms";
 
 const postsStore = usePostsStore();
 const platformsStore = usePlatformsStore();
 
+const { message, errors } = storeToRefs(postsStore);
+
 const posts = ref([]);
 const platforms = ref([]);
 const statusFilter = ref("");
 const dateFilter = ref("");
-const today = new Date().toISOString().slice(0, 10);
-const calendarView = ref(true);
+const today = new Date().toLocaleDateString("en-CA");
+const calendarView = ref(false);
 
 async function fetchPosts() {
   const params = {};
   if (statusFilter.value) params.status = statusFilter.value;
+  if (calendarView.value) {
+    statusFilter.value = "scheduled";
+  }
   if (dateFilter.value) params.date = dateFilter.value;
+
 
   posts.value = await postsStore.getAllPosts(params);
 }
@@ -37,39 +46,28 @@ watch([statusFilter, dateFilter], async () => {
   }
 });
 
-watch(calendarView, (newVal) => {
-  if (newVal) {
-    initCalendar();
-  } else {
-    destroyCalendar();
-  }
+const scheduledTodayCount = computed(() => {
+  return posts.value.filter((post) => {
+    if (post.status !== "scheduled" || !post.scheduled_time) return false;
+
+    const scheduledDate = new Date(post.scheduled_time)
+      .toISOString()
+      .slice(0, 10);
+    return scheduledDate === today;
+  }).length;
 });
 
-// حساب عدد المنشورات المجدولة اليوم
-const scheduledTodayCount = computed(
-  () =>
-    posts.value.filter(
-      (post) =>
-        post.status === "scheduled" &&
-        post.scheduled_time?.slice(0, 10) === today
-    ).length
-);
-
-// نحضر بيانات الأحداث للتقويم
 const calendarEvents = computed(() =>
-  posts.value.map((post) => ({
-    id: post.id,
-    title: post.title,
-    start: post.scheduled_time,
-    backgroundColor:
-      post.status === "draft"
-        ? "#fef9c3"
-        : post.status === "scheduled"
-        ? "#dbeafe"
-        : "#dcfce7",
-    borderColor: "#2563eb",
-    extendedProps: { post },
-  }))
+  posts.value
+    .filter((post) => post.status === "scheduled")
+    .map((post) => ({
+      id: post.id,
+      title: post.title,
+      start: post.scheduled_time,
+      backgroundColor: "#dbeafe",
+      borderColor: "#2563eb",
+      extendedProps: { post },
+    }))
 );
 
 let calendar = null;
@@ -79,15 +77,16 @@ function initCalendar() {
     calendar.destroy();
   }
   const calendarEl = document.getElementById("calendar");
- const dayGridPlugin = window.FullCalendarDayGrid || (window.FullCalendar && window.FullCalendar.dayGridPlugin);
+  if (!calendarEl) return;
 
-  calendar = new window.FullCalendar.Calendar(calendarEl, {
+  calendar = new Calendar(calendarEl, {
     plugins: [dayGridPlugin],
     initialView: "dayGridMonth",
     events: calendarEvents.value,
     eventClick: handleEventClick,
     height: "auto",
   });
+
   calendar.render();
 }
 
@@ -107,8 +106,27 @@ function destroyCalendar() {
 
 function handleEventClick(info) {
   const postId = info.event.id;
-  window.location.href = `/posts/${postId}/edit`;
+  window.location.href = `/posts/edit/${postId}`;
 }
+
+async function toggleCalendarView() {
+  calendarView.value = !calendarView.value;
+
+  if (calendarView.value) {
+    statusFilter.value = "scheduled";
+  } else {
+    statusFilter.value = "";
+  }
+
+  await fetchPosts();
+
+  if (calendarView.value) {
+    initCalendar();
+  } else {
+    destroyCalendar();
+  }
+}
+
 </script>
 
 <template>
@@ -118,6 +136,22 @@ function handleEventClick(info) {
       <RouterLink to="/posts/create" class="primary-btn w-1/2">
         + New Post
       </RouterLink>
+    </div>
+
+    <div
+      v-if="message || errors.general"
+      :class="['alert', errors.general ? 'alert-error' : 'alert-success']"
+    >
+      <span
+        style="float: right; cursor: pointer"
+        @click="
+          message && (message = null);
+          errors.general && (errors.general = null);
+        "
+        >&times;</span
+      >
+      <span v-if="message">{{ message }}</span>
+      <span v-if="errors.general">{{ errors.general[0] }}</span>
     </div>
 
     <!-- إحصائيات -->
@@ -130,8 +164,8 @@ function handleEventClick(info) {
         <div class="stat-title">Total Posts</div>
         <div class="stat-value">{{ posts.length }}</div>
       </div>
-      <button class="btn-edit" @click="calendarView = !calendarView">
-        {{ calendarView ? "List View" : "Calendar View" }}
+      <button class="btn-toggleView" @click="toggleCalendarView">
+        {{ calendarView ? "List Posts" : "Calendar of Scheduled Posts" }}
       </button>
     </div>
 
@@ -194,6 +228,12 @@ function handleEventClick(info) {
               class="btn-edit"
             >
               Edit
+            </RouterLink>
+            <RouterLink
+              :to="{ name: 'post_delete', params: { id: post.id } }"
+              class="btn-delete"
+            >
+              Delete
             </RouterLink>
           </div>
         </div>
@@ -265,5 +305,38 @@ function handleEventClick(info) {
 }
 .btn-edit:hover {
   background: #dbeafe;
+}
+.btn-delete {
+  padding: 2px 10px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  text-decoration: underline;
+  color: #dc2626;
+  background: #f1f5f9;
+}
+.btn-delete:hover {
+  background: #dbeafe;
+}
+.btn-toggleView {
+  background-color: #8b25eb;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.3s ease;
+  user-select: none;
+  height: fit-content;
+  align-self: center;
+}
+
+.btn-toggleView:hover {
+  background-color: #7c21d9;
+}
+
+.btn-toggleView:focus {
+  outline: 2px solid #8b25eb;
+  outline-offset: 2px;
 }
 </style>

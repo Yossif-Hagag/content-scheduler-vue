@@ -47,7 +47,7 @@ const updateProfile = async () => {
         <span
           style="float: right; cursor: pointer"
           @click="
-            message && (message.value = null);
+            message && (message = null);
             errors.general && (errors.general = null);
           "
           >&times;</span

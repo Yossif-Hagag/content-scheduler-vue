@@ -85,8 +85,8 @@ export const usePostsStore = defineStore("postsStore", {
     /******************* Delete a post *******************/
     async deletePost(post) {
       const authStore = useAuthStore();
-      if (authStore.user.id === post.user_id) {
-        const res = await fetch(`/api/posts/${post.id}`, {
+      if (authStore.user.id && post) {
+        const res = await fetch(`/api/posts/${post}`, {
           method: "DELETE",
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -96,20 +96,24 @@ export const usePostsStore = defineStore("postsStore", {
         const data = await res.json();
         if (res.ok) {
           this.errors = {};
+          this.message = data.message || "Post deleted successfully.";
         } else {
           this.errors = { general: [data.message] };
         }
       }
     },
-
     /******************* Update a post *******************/
     async updatePost(post, formData) {
       this.errors = {};
       const authStore = useAuthStore();
-      if (authStore.user.id === post.user_id) {
+      if (authStore.user.id && post) {
         let body, headers;
+        let method = "PUT";
+
         if (formData.image_url instanceof File) {
           body = new FormData();
+          body.append("_method", "PUT");
+
           for (const key in formData) {
             if (Array.isArray(formData[key])) {
               formData[key].forEach((val) => body.append(`${key}[]`, val));
@@ -117,9 +121,12 @@ export const usePostsStore = defineStore("postsStore", {
               body.append(key, formData[key]);
             }
           }
+
           headers = {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           };
+
+          method = "POST";
         } else {
           body = JSON.stringify(formData);
           headers = {
@@ -128,8 +135,8 @@ export const usePostsStore = defineStore("postsStore", {
           };
         }
 
-        const res = await fetch(`/api/posts/${post.id}`, {
-          method: "PUT",
+        const res = await fetch(`/api/posts/${post}`, {
+          method,
           headers,
           body,
         });
@@ -139,6 +146,7 @@ export const usePostsStore = defineStore("postsStore", {
           this.errors = { general: [data.message] };
         } else if (res.ok) {
           this.errors = {};
+          this.message = data.message || "Post updated successfully.";
           return data.data;
         }
       }

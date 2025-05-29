@@ -16,47 +16,64 @@ const { errors } = storeToRefs(postsStore);
 const formData = reactive({
   title: "",
   content: "",
-  image_url: null,
-  scheduled_time: "",
+  image_url: null, // للملف الجديد
+  scheduled_time: "", // يجب تحويل القيمة للصيغة الصحيحة
   status: "draft",
   platforms: [],
 });
+
+const originalImageUrl = ref(null); // لتخزين رابط الصورة الأصلية
 
 const charCount = computed(() => formData.content.length);
 
 const allPlatforms = ref([]);
 
-// تحميل جميع المنصات
+// تحويل الوقت إلى صيغة "YYYY-MM-DDTHH:mm"
+function formatDateTimeLocal(dateTimeStr) {
+  if (!dateTimeStr) return "";
+  // دعم 2025-05-29 14:00:00 أو 2025-05-29T14:00:00Z
+  let dt = dateTimeStr.replace(" ", "T").slice(0, 16);
+  return dt;
+}
+
+//api server target like http://localhost for example
+const BASE_IMAGE_URL = "http://content-scheduler.test/";
+
 onMounted(async () => {
   allPlatforms.value = await platformsStore.getAllPlatforms();
 
-  // جلب بيانات المنشور المراد تعديله
   const postId = route.params.id;
   if (postId) {
     const post = await postsStore.getPost(postId);
     if (post) {
       formData.title = post.title || "";
       formData.content = post.content || "";
-      formData.scheduled_time = post.scheduled_time || "";
+      formData.scheduled_time = formatDateTimeLocal(post.scheduled_time);
       formData.status = post.status || "draft";
-      formData.platforms = post.platforms ? post.platforms.map(p => p.id) : [];
-      // لا نملأ image_url لأن الصورة قد تكون ملف جديد أو رابط
+      formData.platforms = post.platforms
+        ? post.platforms.map((p) => p.id)
+        : [];
+      if (post.image_url) {
+        originalImageUrl.value = BASE_IMAGE_URL + post.image_url;
+      }
     } else {
-      // إذا المنشور غير موجود توجه لصفحة أخرى أو عرض رسالة
-      router.push("/posts");
+      errors.general = ["Post not found."];
+      message.value = null;
     }
   }
 });
 
 const handleImage = (e) => {
-  formData.image_url = e.target.files[0];
+  const file = e.target.files[0];
+  if (file) {
+    formData.image_url = file;
+    originalImageUrl.value = null; // أخفي الصورة القديمة عند اختيار صورة جديدة
+  }
 };
 
 const submit = async () => {
   const postId = route.params.id;
   await postsStore.updatePost(postId, formData);
-  // بعد التعديل يمكن التوجيه مثلاً لصفحة التفاصيل أو القائمة
-  router.push("/posts");
 };
 </script>
 
@@ -70,7 +87,8 @@ const submit = async () => {
     >
       <span
         style="float: right; cursor: pointer"
-        @click="message && (message = null);
+        @click="
+          message && (message = null);
           errors.general && (errors.general = null);
         "
         >&times;</span
@@ -134,6 +152,13 @@ const submit = async () => {
           @change="handleImage"
           class="input"
         />
+        <div v-if="originalImageUrl" style="margin-top: 10px">
+          <img
+            :src="originalImageUrl"
+            alt="Current Image"
+            style="max-width: 100%; max-height: 150px; border-radius: 6px"
+          />
+        </div>
         <p v-if="errors.image_url" class="error">{{ errors.image_url[0] }}</p>
       </div>
       <button class="primary-btn mb-12">Update</button>
