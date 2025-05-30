@@ -3,6 +3,7 @@ import { ref, computed, onMounted, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { Calendar } from "@fullcalendar/core";
 import dayGridPlugin from "@fullcalendar/daygrid";
+import timeGridPlugin from "@fullcalendar/timegrid";
 import { usePostsStore } from "@/stores/posts";
 import { usePlatformsStore } from "@/stores/platforms";
 
@@ -25,7 +26,6 @@ async function fetchPosts() {
     statusFilter.value = "scheduled";
   }
   if (dateFilter.value) params.date = dateFilter.value;
-
 
   posts.value = await postsStore.getAllPosts(params);
 }
@@ -80,8 +80,13 @@ function initCalendar() {
   if (!calendarEl) return;
 
   calendar = new Calendar(calendarEl, {
-    plugins: [dayGridPlugin],
+    plugins: [dayGridPlugin, timeGridPlugin], // <-- أضف هنا
     initialView: "dayGridMonth",
+    headerToolbar: {
+      left: "prev,next today",
+      center: "title",
+      right: "dayGridMonth,timeGridWeek,timeGridDay", // <-- الأزرار التي تظهر
+    },
     events: calendarEvents.value,
     eventClick: handleEventClick,
     height: "auto",
@@ -126,7 +131,6 @@ async function toggleCalendarView() {
     destroyCalendar();
   }
 }
-
 </script>
 
 <template>
@@ -339,4 +343,5 @@ async function toggleCalendarView() {
   outline: 2px solid #8b25eb;
   outline-offset: 2px;
 }
+
 </style>
