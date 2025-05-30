@@ -10,6 +10,9 @@ import PostDeleteView from "@/views/Posts/DeleteView.vue";
 import ShowView from "@/views/Posts/ShowView.vue";
 import UpdateView from "@/views/Posts/UpdateView.vue";
 import ProfileView from "@/views/Auth/ProfileView.vue";
+import Settings from "@/views/Settings.vue";
+import LogsPanel from "@/views/LogsPanel.vue";
+import PostAnalytics from "@/views/PostAnalytics.vue";
 import { useAuthStore } from "@/stores/auth";
 
 const router = createRouter({
@@ -71,6 +74,24 @@ const router = createRouter({
       path: "/posts/update/:id",
       name: "update",
       component: UpdateView,
+      meta: { auth: true },
+    },
+    {
+      path: "/settings",
+      name: "settings",
+      component: Settings,
+      meta: { auth: true },
+    },
+    {
+      path: "/logs",
+      name: "logs",
+      component: LogsPanel,
+      meta: { auth: true },
+    },
+    {
+      path: "/analytics/posts",
+      name: "post_analytics",
+      component: PostAnalytics,
       meta: { auth: true },
     },
   ],

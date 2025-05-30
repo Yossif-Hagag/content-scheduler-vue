@@ -7,50 +7,73 @@ export const usePlatformsStore = defineStore("platformsStore", {
     errors: {},
     message: null,
   }),
+
   actions: {
-    // جلب جميع المنصات المتاحة
     async getAllPlatforms() {
-      const res = await fetch("/api/platforms", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-      const data = await res.json();
-      this.platforms = data.data || [];
-      return this.platforms;
+      this.errors = {};
+      try {
+        const res = await fetch("/api/platforms", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+        const data = await res.json();
+        if (res.ok) {
+          this.platforms = data.data || [];
+        } else {
+          this.errors = { general: [data.message || "فشل في جلب المنصات."] };
+        }
+      } catch (err) {
+        this.errors = { general: [err.message || "خطأ غير متوقع."] };
+      }
     },
 
-    // جلب المنصات النشطة للمستخدم
     async getActivePlatforms() {
-      const res = await fetch("/api/platforms/active", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-      const data = await res.json();
-      this.activePlatforms = data.data || [];
+      this.errors = {};
+      try {
+        const res = await fetch("/api/user/active-platforms", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+        const data = await res.json();
+        if (res.ok) {
+          this.activePlatforms = data.data || [];
+        } else {
+          this.errors = { general: [data.message || "فشل في جلب المنصات النشطة."] };
+        }
+      } catch (err) {
+        this.errors = { general: [err.message || "خطأ غير متوقع."] };
+      }
+
       return this.activePlatforms;
     },
 
-    // تفعيل أو تعطيل منصة للمستخدم
     async toggleActivePlatform(platform_id, action) {
       this.errors = {};
       this.message = null;
-      const res = await fetch("/api/platforms/toggle", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({ platform_id, action }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        this.message = data.message || "Platform status updated.";
-        // تحديث المنصات النشطة بعد التغيير
-        this.activePlatforms = data.data || [];
-      } else {
-        this.errors = { general: [data.message || "Failed to update platform status."] };
+      try {
+        const res = await fetch("/api/user/platform/toggle", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({ platform_id, action }),
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          this.message = data.message || "Platform status updated successfully.";
+          this.activePlatforms = Object.entries(data.data || {}).map(([name, id]) => ({
+            id,
+            name,
+          }));
+        } else {
+          this.errors = { general: [data.message || "Failed to update platform status."] };
+        }
+      } catch (err) {
+        this.errors = { general: [err.message || "An error occurred while connecting to the server."] };
       }
     },
   },

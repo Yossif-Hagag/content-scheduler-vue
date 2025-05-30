@@ -1,6 +1,7 @@
 <script setup>
 import { RouterLink, RouterView } from "vue-router";
 import { useAuthStore } from "./stores/auth";
+import PostAnalytics from "@/views/PostAnalytics.vue";
 
 const authStore = useAuthStore();
 </script>
@@ -14,9 +15,13 @@ const authStore = useAuthStore();
         <RouterLink :to="{ name: 'dashboard' }" class="nav-link"
           >Dashboard</RouterLink
         >
-        <RouterLink :to="{ name: 'post_create' }" class="nav-link">
-          New Post
+        <RouterLink :to="{ name: 'post_analytics' }" class="nav-link"
+          >Post Analytics
         </RouterLink>
+        <RouterLink :to="{ name: 'settings' }" class="nav-link"
+          >Settings
+        </RouterLink>
+        <RouterLink :to="{ name: 'logs' }" class="nav-link">Logs</RouterLink>
         <RouterLink :to="{ name: 'profile' }" class="nav-link"
           >Profile</RouterLink
         >

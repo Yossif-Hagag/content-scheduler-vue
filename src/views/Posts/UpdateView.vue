@@ -40,7 +40,7 @@ function formatDateTimeLocal(dateTimeStr) {
 const BASE_IMAGE_URL = "http://content-scheduler.test/";
 
 onMounted(async () => {
-  allPlatforms.value = await platformsStore.getAllPlatforms();
+  allPlatforms.value = await platformsStore.getActivePlatforms();
 
   const postId = route.params.id;
   if (postId) {
@@ -83,18 +83,25 @@ const submit = async () => {
 
     <div
       v-if="message || errors.general"
-      :class="['alert', errors.general ? 'alert-error' : 'alert-success']"
+      :class="[
+        'p-3 rounded mb-4',
+        errors.general
+          ? 'bg-red-100 text-red-700'
+          : 'bg-green-100 text-green-700',
+      ]"
     >
       <span
-        style="float: right; cursor: pointer"
+        class="float-right cursor-pointer font-bold"
         @click="
-          message && (message = null);
-          errors.general && (errors.general = null);
+          () => {
+            message = null;
+            errors = {};
+          }
         "
         >&times;</span
       >
-      <span v-if="message">{{ message }}</span>
-      <span v-if="errors.general">{{ errors.general[0] }}</span>
+      <div v-if="message">{{ message }}</div>
+      <div v-if="errors.general">{{ errors.general[0] }}</div>
     </div>
 
     <form @submit.prevent="submit" class="post-form">

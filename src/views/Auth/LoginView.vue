@@ -19,14 +19,27 @@ onMounted(() => (errors.value = {}));
   <main>
     <h1 class="title">Login to your account</h1>
 
-    <div
-      v-if="message"
-      :class="['alert', errors.general ? 'alert-error' : 'alert-success']"
+<div
+      v-if="message || errors.general"
+      :class="[
+        'p-3 rounded mb-4',
+        errors.general
+          ? 'bg-red-100 text-red-700'
+          : 'bg-green-100 text-green-700',
+      ]"
     >
-      <span style="float: right; cursor: pointer" @click="message = null"
+      <span
+        class="float-right cursor-pointer font-bold"
+        @click="
+          () => {
+            message = null;
+            errors = {};
+          }
+        "
         >&times;</span
       >
-      {{ message }}
+      <div v-if="message">{{ message }}</div>
+      <!-- <div v-if="errors.general">{{ errors.general[0] }}</div> -->
     </div>
 
     <form

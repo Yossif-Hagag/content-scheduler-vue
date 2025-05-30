@@ -85,7 +85,7 @@ function initCalendar() {
     headerToolbar: {
       left: "prev,next today",
       center: "title",
-      right: "dayGridMonth,timeGridWeek,timeGridDay", // <-- الأزرار التي تظهر
+      right: "dayGridMonth,timeGridWeek,timeGridDay",
     },
     events: calendarEvents.value,
     eventClick: handleEventClick,
@@ -144,18 +144,25 @@ async function toggleCalendarView() {
 
     <div
       v-if="message || errors.general"
-      :class="['alert', errors.general ? 'alert-error' : 'alert-success']"
+      :class="[
+        'p-3 rounded mb-4',
+        errors.general
+          ? 'bg-red-100 text-red-700'
+          : 'bg-green-100 text-green-700',
+      ]"
     >
       <span
-        style="float: right; cursor: pointer"
+        class="float-right cursor-pointer font-bold"
         @click="
-          message && (message = null);
-          errors.general && (errors.general = null);
+          () => {
+            message = null;
+            errors = {};
+          }
         "
         >&times;</span
       >
-      <span v-if="message">{{ message }}</span>
-      <span v-if="errors.general">{{ errors.general[0] }}</span>
+      <div v-if="message">{{ message }}</div>
+      <div v-if="errors.general">{{ errors.general[0] }}</div>
     </div>
 
     <!-- إحصائيات -->
@@ -343,5 +350,4 @@ async function toggleCalendarView() {
   outline: 2px solid #8b25eb;
   outline-offset: 2px;
 }
-
 </style>

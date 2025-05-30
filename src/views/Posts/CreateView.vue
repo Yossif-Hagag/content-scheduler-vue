@@ -2,12 +2,11 @@
 import { usePostsStore } from "@/stores/posts";
 import { usePlatformsStore } from "@/stores/platforms";
 import { storeToRefs } from "pinia";
-import { reactive, ref, computed, onMounted ,toRaw} from "vue";
+import { reactive, ref, computed, onMounted, toRaw } from "vue";
 
 const postsStore = usePostsStore();
 const platformsStore = usePlatformsStore();
-const { message } = storeToRefs(postsStore);
-const { errors } = storeToRefs(postsStore);
+const { message, errors } = storeToRefs(postsStore);
 
 const formData = reactive({
   title: "",
@@ -22,7 +21,7 @@ const charCount = computed(() => formData.content.length);
 
 const allPlatforms = ref([]);
 onMounted(async () => {
-  allPlatforms.value = await platformsStore.getAllPlatforms();
+  allPlatforms.value = await platformsStore.getActivePlatforms();
 });
 
 const handleImage = (e) => {
@@ -40,19 +39,26 @@ const submit = async () => {
 
     <div
       v-if="message || errors.general"
-      :class="['alert', errors.general ? 'alert-error' : 'alert-success']"
+      :class="[
+        'p-3 rounded mb-4',
+        errors.general
+          ? 'bg-red-100 text-red-700'
+          : 'bg-green-100 text-green-700',
+      ]"
     >
       <span
-        style="float: right; cursor: pointer"
-        @click="message && (message = null);
-          errors.general && (errors.general = null);
+        class="float-right cursor-pointer font-bold"
+        @click="
+          () => {
+            message = null;
+            errors = {};
+          }
         "
         >&times;</span
       >
-      <span v-if="message">{{ message }}</span>
-      <span v-if="errors.general">{{ errors.general[0] }}</span>
+      <div v-if="message">{{ message }}</div>
+      <div v-if="errors.general">{{ errors.general[0] }}</div>
     </div>
-    
 
     <form @submit.prevent="submit" class="post-form">
       <div>

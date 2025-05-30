@@ -39,23 +39,32 @@ const updateProfile = async () => {
 <template>
   <main>
     <h1 class="title">Profile</h1>
-    <div class="profile-box">
-      <div
-        v-if="message || errors.general"
-        :class="['alert', errors.general ? 'alert-error' : 'alert-success']"
-      >
-        <span
-          style="float: right; cursor: pointer"
-          @click="
-            message && (message = null);
-            errors.general && (errors.general = null);
-          "
-          >&times;</span
-        >
-        <span v-if="message">{{ message }}</span>
-        <span v-if="errors.general">{{ errors.general[0] }}</span>
-      </div>
 
+    <div
+      v-if="message || errors.general"
+      :class="[
+        'p-3 rounded mb-4',
+        errors.general
+          ? 'bg-red-100 text-red-700'
+          : 'bg-green-100 text-green-700',
+      ]"
+    >
+      <span
+        class="float-right cursor-pointer font-bold"
+        @click="
+          () => {
+            message = null;
+            errors = {};
+          }
+        "
+        >&times;</span
+      >
+      <div v-if="message">{{ message }}</div>
+      <div v-if="errors.general">{{ errors.general[0] }}</div>
+    </div>
+
+    
+    <div class="profile-box">
       <form @submit.prevent="updateProfile" class="space-y-4">
         <div>
           <label>Name</label>
